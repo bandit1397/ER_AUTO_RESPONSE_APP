@@ -90,9 +90,10 @@ socket.on("new_request", (data) => {
 
   current = data.requestID;
 
-  new Audio("/static/alert.mp3").play();
+  // 🔊 여기 수정 ⭐
+  const audio = new Audio("https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg");
+  audio.play().catch(()=>{});
 });
-
 async function send(r){
 
   await fetch(`${SERVER}/response?requestID=${current}&hospital=${HOSPITAL}&response=${r}`);

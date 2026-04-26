@@ -163,7 +163,13 @@ def status(requestID):
         }
         for r in rows
     ])
-
+    
+# =========================
+# 테스트 ⭐ (여기에 추가)
+# =========================
+@app.route('/test')
+def test():
+    return "test ok"
 
 # =========================
 # 화면

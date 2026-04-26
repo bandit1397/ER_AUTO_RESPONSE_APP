@@ -66,6 +66,11 @@ button {
 
 <script>
 
+document.body.addEventListener("click", () => {
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  ctx.resume();
+}, { once: true });
+  
 const SERVER = window.location.origin;
 const HOSPITAL = "{{ hospital }}";
 

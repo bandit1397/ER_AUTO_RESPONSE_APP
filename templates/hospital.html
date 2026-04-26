@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>병원 시스템</title>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+<style>
+body {
+  margin: 0;
+  background: #0f172a;
+  color: white;
+  font-family: Arial;
+  text-align: center;
+}
+
+#card {
+  margin: 50px auto;
+  width: 320px;
+  background: #1e293b;
+  padding: 20px;
+  border-radius: 12px;
+  display: none;
+}
+
+button {
+  width: 120px;
+  padding: 10px;
+  margin: 5px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+#ok { background: green; color: white; }
+#no { background: red; color: white; }
+
+#standby {
+  margin-top: 100px;
+  color: yellow;
+}
+</style>
+</head>
+
+<body>
+
+<h2>🏥 {{ hospital }}</h2>
+
+<div id="card">
+
+  <h3>🚨 EMERGENCY</h3>
+
+  <div id="req"></div>
+  <div id="summary"></div>
+  <div id="eta"></div>
+
+  <br>
+
+  <button id="ok" onclick="send('가능')">가능</button>
+  <button id="no" onclick="send('불가')">불가</button>
+
+</div>
+
+<div id="standby">대기중...</div>
+
+<script>
+
+const SERVER = window.location.origin;
+const HOSPITAL = "{{ hospital }}";
+
+let current = null;
+
+const socket = io(SERVER);
+
+socket.on("connect", () => {
+  socket.emit("join", { hospital: HOSPITAL });
+});
+
+socket.on("new_request", (data) => {
+
+  if(data.hospital !== HOSPITAL) return;
+
+  document.getElementById("card").style.display = "block";
+  document.getElementById("standby").style.display = "none";
+
+  document.getElementById("req").innerText = data.requestID;
+  document.getElementById("summary").innerText = data.summary;
+  document.getElementById("eta").innerText = data.eta;
+
+  current = data.requestID;
+
+  new Audio("/static/alert.mp3").play();
+});
+
+async function send(r){
+
+  await fetch(`${SERVER}/response?requestID=${current}&hospital=${HOSPITAL}&response=${r}`);
+
+  alert("응답 완료: " + r);
+
+  document.getElementById("card").style.display = "none";
+  document.getElementById("standby").style.display = "block";
+
+  current = null;
+}
+
+</script>
+
+</body>
+</html>

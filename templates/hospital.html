@@ -129,7 +129,12 @@ socket.on("new_request", (data) => {
 // =========================
 socket.on("close_request", (data) => {
 
-  if (current === data.requestID) {
+  console.log("CLOSE 수신:", data);
+  console.log("현재 current:", current);
+
+  if (String(current) === String(data.requestID)) {
+
+    console.log("MATCH OK → 종료 실행");
 
     document.getElementById("card").style.display = "none";
     document.getElementById("standby").innerText =

@@ -67,6 +67,24 @@ def create_request():
 
         h = h.strip()
 
+        # =========================
+        # 1️⃣ 이미 응답했는지 체크
+        # =========================
+        cur.execute("""
+        SELECT response, expires_at
+        FROM requests
+        WHERE requestID=? AND hospital=?
+        """, (data["requestID"], h))
+
+        row = cur.fetchone()
+
+        # 이미 "가능/불가" 응답 완료 → 재전송 안 함
+        if row and row[0]:
+            continue
+
+        # =========================
+        # 2️⃣ INSERT (없으면 생성, 있으면 무시)
+        # =========================
         cur.execute("""
         INSERT OR IGNORE INTO requests
         VALUES (?, ?, ?, ?, '', ?, ?)
@@ -79,7 +97,9 @@ def create_request():
             expire.strftime("%Y-%m-%d %H:%M:%S")
         ))
 
-        # 🔥 실시간 전송
+        # =========================
+        # 3️⃣ WebSocket 실시간 전송
+        # =========================
         socketio.emit("new_request", {
             "requestID": data["requestID"],
             "summary": data.get("summary", ""),

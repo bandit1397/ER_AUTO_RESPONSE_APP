@@ -31,7 +31,9 @@ def init_db():
         UNIQUE(requestID, hospital)
     )
     """)
-
+    cur.execute("""
+    ALTER TABLE requests ADD COLUMN status TEXT DEFAULT 'OPEN'
+    """)
     conn.commit()
     conn.close()
 

@@ -15,10 +15,16 @@ print("🔥 EMERGENCY SYSTEM STARTED")
 # =========================
 # DB 초기화
 # =========================
+import sqlite3
+
 def init_db():
+
     conn = sqlite3.connect("hospital.db")
     cur = conn.cursor()
 
+    # =========================
+    # 1️⃣ 테이블 생성 (기본 구조)
+    # =========================
     cur.execute("""
     CREATE TABLE IF NOT EXISTS requests (
         requestID TEXT,
@@ -31,14 +37,34 @@ def init_db():
         UNIQUE(requestID, hospital)
     )
     """)
-    try:
-        cur.execute("ALTER TABLE requests ADD COLUMN status TEXT DEFAULT 'OPEN'")
-    except:
-        pass
 
+    # =========================
+    # 2️⃣ 컬럼 존재 여부 체크 (핵심 개선)
+    # =========================
+    cur.execute("PRAGMA table_info(requests)")
+    columns = cur.fetchall()
+
+    column_names = [col[1] for col in columns]
+
+    # =========================
+    # 3️⃣ status 컬럼 없을 때만 추가
+    # =========================
+    if "status" not in column_names:
+        cur.execute("""
+        ALTER TABLE requests 
+        ADD COLUMN status TEXT DEFAULT 'OPEN'
+        """)
+
+    # =========================
+    # 4️⃣ 저장
+    # =========================
     conn.commit()
     conn.close()
 
+
+# =========================
+# 5️⃣ 실행
+# =========================
 init_db()
 
 # =========================

@@ -63,18 +63,16 @@ async function send(){
 
 async function closeRequest() {
 
-  const requestID = document.getElementById("id").value;
-
-  if(!requestID){
+  if (!currentRequestID) {
     alert("REQ-ID 없음");
     return;
   }
 
-  await fetch(`/close/${requestID}`);
+  await fetch(`/close/${currentRequestID}`);
 
-  alert("강제 종료 완료");
+  alert("강제 종료 완료: " + currentRequestID);
 }
-
+  
 async function check(id){
 
   setInterval(async () => {

@@ -103,9 +103,12 @@ socket.on("connect", () => {
   socket.emit("join", { hospital: HOSPITAL });
 });
 
+// =========================
+// 🚑 신규 요청 수신
+// =========================
 socket.on("new_request", (data) => {
 
-  if(data.hospital !== HOSPITAL) return;
+  if (data.hospital !== HOSPITAL) return;
 
   document.getElementById("card").style.display = "block";
   document.getElementById("standby").style.display = "none";
@@ -116,13 +119,34 @@ socket.on("new_request", (data) => {
 
   current = data.requestID;
 
-  // 🔊 여기 수정 ⭐
+  // 🔊 알람
   const audio = new Audio("https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg");
-  audio.play().catch(()=>{});
+  audio.play().catch(() => {});
 });
-async function send(r){
 
-  await fetch(`${SERVER}/response?requestID=${current}&hospital=${HOSPITAL}&response=${r}`);
+// =========================
+// 🚑 상황실 종료 처리 (핵심 추가 부분)
+// =========================
+socket.on("close_request", (data) => {
+
+  if (current === data.requestID) {
+
+    document.getElementById("card").style.display = "none";
+    document.getElementById("standby").innerText =
+      "🚑 요청 종료됨 (상황실 종료)";
+
+    current = null;
+  }
+});
+
+// =========================
+// 🚑 응답 전송 함수
+// =========================
+async function send(r) {
+
+  await fetch(
+    `${SERVER}/response?requestID=${current}&hospital=${HOSPITAL}&response=${r}`
+  );
 
   alert("응답 완료: " + r);
 

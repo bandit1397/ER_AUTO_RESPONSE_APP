@@ -206,6 +206,32 @@ def status(requestID):
         })
 
     return jsonify(result)
+
+# =========================
+# ⭐ 강제 종료 API (여기 추가!)
+# =========================
+@app.route("/close/<requestID>")
+def close(requestID):
+
+    conn = sqlite3.connect("hospital.db")
+    cur = conn.cursor()
+
+    # 1️⃣ 상태 종료 처리
+    cur.execute("""
+    UPDATE requests
+    SET response='CLOSED'
+    WHERE requestID=?
+    """, (requestID,))
+
+    conn.commit()
+    conn.close()
+
+    # 2️⃣ 병원 전체 종료 알림
+    socketio.emit("close_request", {
+        "requestID": requestID
+    })
+
+    return "closed"
     
 # =========================
 # 테스트 ⭐ (여기에 추가)

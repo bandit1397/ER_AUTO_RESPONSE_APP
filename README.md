@@ -23,3 +23,6 @@
 2. 로그인 화면/New + 클릭 - web server 선택/githut 저장소 연결-내 프로젝트 연결
 3. 서버설정/ name-내프로젝트 /region- singapore/branch-main 그대로/runtime-python 선택/build command-pip install -r requirements.txt/ start command-python app.py/ instance type-free
 4. deploy-create seb service 클릭/
+
+# https://er-auto-response-app.onrender.com/control
+https://er-auto-response-app.onrender.com/hospital/B

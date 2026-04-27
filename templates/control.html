@@ -24,27 +24,38 @@
 <script>
 
 const SERVER = window.location.origin;
-
+let currentRequestID = null; 
 async function send(){
 
-  const requestID = document.getElementById("id").value || ("REQ-" + Date.now());
+  // ⭐ 이미 있으면 유지, 없으면 생성
+  if(!currentRequestID){
+    currentRequestID = "REQ-" + Date.now();
+  }
+
+  const requestID = currentRequestID;
 
   document.getElementById("reqDisplay").innerHTML =
     `<div style="font-size:20px; margin:10px;">
        <b style="color:#38bdf8">REQ-ID:</b> ${requestID}
      </div>`;
-  
+
   const summary = document.getElementById("summary").value;
   const eta = document.getElementById("eta").value;
 
   const hospitals = document.getElementById("hosp")
-    .value.split(",")
+    .value
+    .split(",")
     .map(h => h.trim());
 
   await fetch(SERVER + "/request", {
     method: "POST",
     headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({requestID, summary, eta, hospitals})
+    body: JSON.stringify({
+      requestID,
+      summary,
+      eta,
+      hospitals
+    })
   });
 
   check(requestID);

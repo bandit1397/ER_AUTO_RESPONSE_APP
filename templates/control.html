@@ -29,10 +29,11 @@ async function send(){
 
   const requestID = document.getElementById("id").value || ("REQ-" + Date.now());
 
-  // ⭐ 여기 추가
-  document.getElementById("reqDisplay").innerText =
-    "📌 REQ-ID: " + requestID;
-
+  document.getElementById("reqDisplay").innerHTML =
+    `<div style="font-size:20px; margin:10px;">
+       <b style="color:#38bdf8">REQ-ID:</b> ${requestID}
+     </div>`;
+  
   const summary = document.getElementById("summary").value;
   const eta = document.getElementById("eta").value;
 

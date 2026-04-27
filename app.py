@@ -265,7 +265,8 @@ def status(requestID):
             "summary": r[1],
             "eta": r[2],
             "response": r[3],
-            "requestID": r[4]
+            "requestID": r[4],
+            "status": r[5]
         })
 
     return jsonify(result)

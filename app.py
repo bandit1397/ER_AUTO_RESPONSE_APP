@@ -279,10 +279,10 @@ def close(requestID):
     conn = sqlite3.connect("hospital.db")
     cur = conn.cursor()
 
-    # 1️⃣ 상태 종료 처리
+    # 1️⃣ 상태 종료 처리 (핵심 수정)
     cur.execute("""
     UPDATE requests
-    SET response='CLOSED'
+    SET status='CLOSED'
     WHERE requestID=?
     """, (requestID,))
 

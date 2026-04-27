@@ -133,6 +133,9 @@ def response():
     conn = sqlite3.connect("hospital.db")
     cur = conn.cursor()
 
+    # =========================
+    # 1️⃣ 데이터 조회 (한 번만)
+    # =========================
     cur.execute("""
     SELECT response, expires_at
     FROM requests
@@ -141,16 +144,37 @@ def response():
 
     row = cur.fetchone()
 
+    # =========================
+    # 2️⃣ 존재 여부
+    # =========================
     if not row:
+        conn.close()
         return "not found"
 
+    # =========================
+    # 3️⃣ CLOSED 체크 (강제 종료 핵심)
+    # =========================
+    if row[0] == "CLOSED":
+        conn.close()
+        return "closed request"
+
+    # =========================
+    # 4️⃣ 이미 응답했는지
+    =========================
     if row[0]:
+        conn.close()
         return "already responded"
 
+    # =========================
+    # 5️⃣ 만료 체크
+    # =========================
     if datetime.now() > datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S"):
         conn.close()
         return "expired"
-        
+
+    # =========================
+    # 6️⃣ 응답 저장
+    # =========================
     cur.execute("""
     UPDATE requests
     SET response=?

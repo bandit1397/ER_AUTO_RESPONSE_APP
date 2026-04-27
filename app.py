@@ -168,6 +168,9 @@ def status(requestID):
     conn = sqlite3.connect("hospital.db")
     cur = conn.cursor()
 
+    # =========================
+    # 1️⃣ 요청 데이터 조회
+    # =========================
     cur.execute("""
     SELECT hospital, summary, eta, response, requestID
     FROM requests
@@ -177,16 +180,32 @@ def status(requestID):
     rows = cur.fetchall()
     conn.close()
 
-    return jsonify([
-        {
+    # =========================
+    # 2️⃣ 데이터 없을 때
+    # =========================
+    if not rows:
+        return jsonify([])
+
+    # =========================
+    # 3️⃣ CLOSED 요청은 상황실에서 제외 (중요)
+    # =========================
+    result = []
+
+    for r in rows:
+
+        # CLOSED 상태는 화면에서 숨김
+        if r[3] == "CLOSED":
+            continue
+
+        result.append({
             "hospital": r[0],
             "summary": r[1],
             "eta": r[2],
             "response": r[3],
             "requestID": r[4]
-        }
-        for r in rows
-    ])
+        })
+
+    return jsonify(result)
     
 # =========================
 # 테스트 ⭐ (여기에 추가)

@@ -2,9 +2,138 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>상황실</title>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+<style>
+
+body {
+  margin: 0;
+  font-family: Arial;
+  background: #0f172a;
+  color: white;
+}
+
+/* =========================
+   HEADER
+========================= */
+h2 {
+  text-align: center;
+  background: #1e293b;
+  margin: 0;
+  padding: 15px;
+  font-size: 22px;
+}
+
+/* =========================
+   INPUT AREA
+========================= */
+input {
+  width: 90%;
+  margin: 8px auto;
+  display: block;
+  padding: 14px;
+  font-size: 16px;
+  border-radius: 10px;
+  border: none;
+}
+
+/* =========================
+   BUTTON AREA
+========================= */
+button {
+  width: 45%;
+  margin: 10px 2%;
+  padding: 16px;
+  font-size: 18px;
+  border: none;
+  border-radius: 12px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:first-of-type {
+  background: #22c55e;
+  color: white;
+}
+
+button:last-of-type {
+  background: #ef4444;
+  color: white;
+}
+
+/* =========================
+   REQ DISPLAY
+========================= */
+#reqDisplay {
+  text-align: center;
+  font-size: 22px;
+  margin: 15px 0;
+  color: #38bdf8;
+  font-weight: bold;
+}
+
+/* =========================
+   RESULT AREA (현장용 카드)
+========================= */
+#result {
+  padding: 10px;
+}
+
+.result-item {
+  background: #1e293b;
+  margin: 10px;
+  padding: 15px;
+  border-radius: 12px;
+  font-size: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* 상태 색상 */
+.wait {
+  color: #facc15;
+  font-weight: bold;
+}
+
+.ok {
+  color: #22c55e;
+  font-weight: bold;
+}
+
+.no {
+  color: #ef4444;
+  font-weight: bold;
+}
+
+/* =========================
+   MOBILE OPTIMIZATION
+========================= */
+@media (max-width: 768px) {
+
+  h2 {
+    font-size: 26px;
+  }
+
+  input {
+    font-size: 18px;
+    padding: 18px;
+  }
+
+  button {
+    font-size: 20px;
+    padding: 20px;
+  }
+
+  .result-item {
+    font-size: 20px;
+  }
+}
+
+</style>
 </head>
 
 <body>
@@ -18,16 +147,18 @@
 
 <button onclick="send()">전송</button>
 <button onclick="closeRequest()">🚨 강제 종료</button>
-<div id="reqDisplay"></div>   <!-- ⭐ 추가 -->
+
+<div id="reqDisplay"></div>
 <div id="result"></div>
 
 <script>
 
 const SERVER = window.location.origin;
 let currentRequestID = null; 
+
 async function send(){
 
-  // ⭐ 이미 있으면 유지, 없으면 생성
+  // ⭐ 기존 로직 그대로 유지
   if(!currentRequestID){
     currentRequestID = "REQ-" + Date.now();
   }
@@ -35,9 +166,9 @@ async function send(){
   const requestID = currentRequestID;
 
   document.getElementById("reqDisplay").innerHTML =
-    `<div style="font-size:20px; margin:10px;">
-       <b style="color:#38bdf8">REQ-ID:</b> ${requestID}
-     </div>`;
+    `<div>
+      REQ-ID: <b>${requestID}</b>
+    </div>`;
 
   const summary = document.getElementById("summary").value;
   const eta = document.getElementById("eta").value;
@@ -72,7 +203,7 @@ async function closeRequest() {
 
   alert("강제 종료 완료: " + currentRequestID);
 }
-  
+
 async function check(id){
 
   setInterval(async () => {
@@ -81,9 +212,28 @@ async function check(id){
     const data = await res.json();
 
     document.getElementById("result").innerHTML =
-      data.map(d =>
-        `${d.hospital} : ${d.response || "대기"}`
-      ).join("<br>");
+      data.map(d => {
+
+        let state = "대기";
+        let cls = "wait";
+
+        if(d.response === "가능"){
+          state = "가능";
+          cls = "ok";
+        }
+
+        if(d.response === "불가"){
+          state = "불가";
+          cls = "no";
+        }
+
+        return `
+          <div class="result-item">
+            <div>${d.hospital}</div>
+            <div class="${cls}">${state}</div>
+          </div>
+        `;
+      }).join("");
 
   }, 3000);
 }

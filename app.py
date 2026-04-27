@@ -172,12 +172,21 @@ def response():
     # 1️⃣ 데이터 조회 (한 번만)
     # =========================
     cur.execute("""
-    SELECT response, expires_at
+    SELECT response, expires_at, status
     FROM requests
     WHERE requestID=? AND hospital=?
     """, (requestID, hospital))
 
     row = cur.fetchone()
+
+    response = row[0]
+    expires_at = row[1]
+    status = row[2]
+
+    # 🚨 여기서 바로 체크
+    if status == "CLOSED":
+        conn.close()
+        return "closed request"
 
     # =========================
     # 2️⃣ 존재 여부

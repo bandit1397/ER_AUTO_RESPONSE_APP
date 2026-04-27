@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>상황실</title>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+
+<body>
+
+<h2>🚑 상황실</h2>
+
+<input id="id" placeholder="REQ-ID">
+<input id="summary" placeholder="환자">
+<input id="eta" placeholder="ETA">
+<input id="hosp" placeholder="A,B,C">
+
+<button onclick="send()">전송</button>
+<button onclick="closeRequest()">🚨 강제 종료</button>
+<div id="reqDisplay"></div>   <!-- ⭐ 추가 -->
+<div id="result"></div>
+
+<script>
+
+const SERVER = window.location.origin;
+let currentRequestID = null; 
+async function send(){
+
+  // ⭐ 이미 있으면 유지, 없으면 생성
+  if(!currentRequestID){
+    currentRequestID = "REQ-" + Date.now();
+  }
+
+  const requestID = currentRequestID;
+
+  document.getElementById("reqDisplay").innerHTML =
+    `<div style="font-size:20px; margin:10px;">
+       <b style="color:#38bdf8">REQ-ID:</b> ${requestID}
+     </div>`;
+
+  const summary = document.getElementById("summary").value;
+  const eta = document.getElementById("eta").value;
+
+  const hospitals = document.getElementById("hosp")
+    .value
+    .split(",")
+    .map(h => h.trim());
+
+  await fetch(SERVER + "/request", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      requestID,
+      summary,
+      eta,
+      hospitals
+    })
+  });
+
+  check(requestID);
+}
+
+async function closeRequest() {
+
+  if (!currentRequestID) {
+    alert("REQ-ID 없음");
+    return;
+  }
+
+  await fetch(`/close/${currentRequestID}`);
+
+  alert("강제 종료 완료: " + currentRequestID);
+}
+  
+async function check(id){
+
+  setInterval(async () => {
+
+    const res = await fetch(SERVER + "/status/" + id);
+    const data = await res.json();
+
+    document.getElementById("result").innerHTML =
+      data.map(d =>
+        `${d.hospital} : ${d.response || "대기"}`
+      ).join("<br>");
+
+  }, 3000);
+}
+
+</script>
+
+</body>
+</html>

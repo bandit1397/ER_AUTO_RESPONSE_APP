@@ -58,7 +58,9 @@ def create_request():
 
     data = request.json
     now = datetime.now()
-    expire = now + timedelta(minutes=10)
+
+    # ⏰ 30분 유효시간 (추천 실전값)
+    expire = now + timedelta(minutes=30)
 
     conn = sqlite3.connect("hospital.db")
     cur = conn.cursor()
@@ -68,7 +70,7 @@ def create_request():
         h = h.strip()
 
         # =========================
-        # 1️⃣ 이미 응답했는지 체크
+        # 1️⃣ 기존 응답 여부 확인
         # =========================
         cur.execute("""
         SELECT response, expires_at
@@ -78,12 +80,12 @@ def create_request():
 
         row = cur.fetchone()
 
-        # 이미 "가능/불가" 응답 완료 → 재전송 안 함
+        # 이미 응답 완료된 경우 → 재전송 안 함
         if row and row[0]:
             continue
 
         # =========================
-        # 2️⃣ INSERT (없으면 생성, 있으면 무시)
+        # 2️⃣ 데이터 저장 (없으면 생성)
         # =========================
         cur.execute("""
         INSERT OR IGNORE INTO requests
@@ -98,13 +100,14 @@ def create_request():
         ))
 
         # =========================
-        # 3️⃣ WebSocket 실시간 전송
+        # 3️⃣ 실시간 전송 (WebSocket)
         # =========================
         socketio.emit("new_request", {
             "requestID": data["requestID"],
             "summary": data.get("summary", ""),
             "eta": data.get("eta", ""),
-            "hospital": h
+            "hospital": h,
+            "expire": expire.strftime("%Y-%m-%d %H:%M:%S")
         }, room=h)
 
     conn.commit()

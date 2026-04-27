@@ -144,8 +144,9 @@ def response():
         return "already responded"
 
     if datetime.now() > datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S"):
+        conn.close()
         return "expired"
-
+        
     cur.execute("""
     UPDATE requests
     SET response=?

@@ -118,8 +118,17 @@ def create_request():
         # 2️⃣ 데이터 저장 (없으면 생성)
         # =========================
         cur.execute("""
-        INSERT OR IGNORE INTO requests
-        VALUES (?, ?, ?, ?, '', ?, ?)
+        INSERT OR IGNORE INTO requests (
+            requestID,
+            hospital,
+            summary,
+            eta,
+            response,
+            created_at,
+            expires_at,
+            status
+        )
+        VALUES (?, ?, ?, ?, '', ?, ?, 'OPEN')
         """, (
             data["requestID"],
             h,

@@ -17,7 +17,7 @@
 <input id="hosp" placeholder="A,B,C">
 
 <button onclick="send()">전송</button>
-
+<button onclick="closeRequest()">🚨 강제 종료</button>
 <div id="reqDisplay"></div>   <!-- ⭐ 추가 -->
 <div id="result"></div>
 
@@ -59,6 +59,20 @@ async function send(){
   });
 
   check(requestID);
+}
+
+async function closeRequest() {
+
+  const requestID = document.getElementById("id").value;
+
+  if(!requestID){
+    alert("REQ-ID 없음");
+    return;
+  }
+
+  await fetch(`/close/${requestID}`);
+
+  alert("강제 종료 완료");
 }
 
 async function check(id){

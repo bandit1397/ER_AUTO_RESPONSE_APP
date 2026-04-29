@@ -190,22 +190,22 @@ async function loadLatestRequest(){
 const socket = io(SERVER);
 
 socket.on("connect", () => {
-  socket.emit("join", { hospital: HOSPITAL });
+  setTimeout(() => {
+    socket.emit("join", { hospital: HOSPITAL });
+  }, 300);
 });
-
-// =========================
-// 🚑 신규 요청 수신
-// =========================
+ 
 // =========================
 // 🚑 신규 요청 수신
 // =========================
 socket.on("new_request", async (data) => {
+  console.log("받음:", data);
 
-  if (data.hospital !== HOSPITAL) return;
+  if (!data.hospital || data.hospital.trim() !== HOSPITAL.trim()) {
+    return;
+  }
 
-  // ⭐ 항상 최신 요청 다시 조회
   await loadLatestRequest();
-
 });
   
 // =========================

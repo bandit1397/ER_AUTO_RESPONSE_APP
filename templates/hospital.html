@@ -40,7 +40,25 @@ Notification.requestPermission().then(async (permission) => {
 
     });
 
-    alert(token);
+    // =========================
+    // 서버에 토큰 저장
+    // =========================
+    await fetch("/save_token", {
+
+      method: "POST",
+
+      headers: {
+        "Content-Type":"application/json"
+      },
+
+      body: JSON.stringify({
+        hospital: "{{ hospital }}",
+        token: token
+      })
+
+    });
+
+    console.log("토큰 저장 완료");
 
   }
 

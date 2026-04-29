@@ -93,6 +93,34 @@ def join(data):
     print("joined:", hospital)
 
 # =========================
+# FCM 토큰 저장
+# =========================
+@app.route("/save_token", methods=["POST"])
+def save_token():
+
+    data = request.json
+
+    hospital = data.get("hospital")
+    token = data.get("token")
+
+    conn = sqlite3.connect("hospital.db")
+    cur = conn.cursor()
+
+    cur.execute("""
+    INSERT OR REPLACE INTO hospital_tokens (
+        hospital,
+        token
+    )
+    VALUES (?, ?)
+    """, (hospital, token))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"status":"saved"})
+
+
+# =========================
 # 요청 생성 (실시간 push)
 # =========================
 @app.route("/request", methods=["POST"])

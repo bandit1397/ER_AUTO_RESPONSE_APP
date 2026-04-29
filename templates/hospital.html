@@ -26,6 +26,8 @@ const app = initializeApp(firebaseConfig);
 
 const messaging = getMessaging(app);
 
+navigator.serviceWorker.register("/firebase-messaging-sw.js");
+
 Notification.requestPermission().then(async (permission) => {
 
   if(permission === "granted") {

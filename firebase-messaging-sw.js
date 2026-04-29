@@ -16,11 +16,20 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage(function(payload) {
 
-  self.registration.showNotification(
-    payload.notification.title,
-    {
-      body: payload.notification.body
-    }
-  );
+  // 🔥 data 메시지 기준으로 변경
+  const title = payload.data?.title || "알림";
+  const body = payload.data?.body || "";
+
+  self.registration.showNotification(title, {
+
+    body: body,
+
+    icon: "/icon.png",
+
+    requireInteraction: true,   // 🔥 사용자가 닫기 전까지 유지
+
+    vibrate: [300, 100, 300, 100, 300]
+
+  });
 
 });

@@ -1,26 +1,22 @@
 from flask import Flask, request, jsonify, render_template
-from firebase_admin import messaging
-import firebase_admin
-from firebase_admin import credentials
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit, join_room
 import sqlite3
 from datetime import datetime, timedelta
 import os
+import json
+
+import firebase_admin
+from firebase_admin import credentials, messaging
 
 app = Flask(__name__)
 CORS(app)
 
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
-# 🔥 여기 넣는다 (핵심)
-cred = credentials.Certificate({
-    "type": os.environ["FIREBASE_TYPE"],
-    "project_id": os.environ["FIREBASE_PROJECT_ID"],
-    "private_key_id": os.environ["FIREBASE_PRIVATE_KEY_ID"],
-    "private_key": os.environ["FIREBASE_PRIVATE_KEY"].replace("\\n", "\n"),
-    "client_email": os.environ["FIREBASE_CLIENT_EMAIL"]
-})
+cred_json = json.loads(os.environ["FIREBASE_CREDENTIALS"])
+
+cred = credentials.Certificate(cred_json)
 
 firebase_admin.initialize_app(cred)
 

@@ -34,10 +34,18 @@ Notification.requestPermission().then(async (permission) => {
 
     console.log("알림 허용 완료");
 
+    const token = await getToken(messaging, {
+
+      vapidKey: "BMF4NpqP1JlSpLYIds8iartFBmAU2kU0OYlQLDB41cL76baFrIR8XOY2N04tJxEPvh_1DJJmw57neo8utR8Qi-w"
+
+    });
+
+    alert(token);
+
   }
 
 });
-
+  
 </script>
 
 <style>

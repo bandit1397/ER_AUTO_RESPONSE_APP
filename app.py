@@ -128,7 +128,18 @@ def save_token():
 
     return jsonify({"status":"saved"})
 
+@app.route("/debug/tokens")
+def debug_tokens():
+    conn = sqlite3.connect("hospital.db")
+    cur = conn.cursor()
 
+    cur.execute("SELECT * FROM hospital_tokens")
+    rows = cur.fetchall()
+
+    conn.close()
+
+    return jsonify(rows)
+    
 # =========================
 # 요청 생성 (실시간 push)
 # =========================

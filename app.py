@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, render_template
+from firebase_admin import messaging
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit, join_room
 import sqlite3
@@ -123,13 +124,15 @@ def save_token():
 # =========================
 # 요청 생성 (실시간 push)
 # =========================
+from firebase_admin import messaging
+
 @app.route("/request", methods=["POST"])
 def create_request():
 
     data = request.json
     now = datetime.now()
 
-    # ⏰ 30분 유효시간 (추천 실전값)
+    # ⏰ 30분 유효시간
     expire = now + timedelta(minutes=30)
 
     conn = sqlite3.connect("hospital.db")
@@ -165,7 +168,7 @@ def create_request():
             continue
 
         # =========================
-        # 2️⃣ 데이터 저장 (없으면 생성)
+        # 2️⃣ 데이터 저장
         # =========================
         cur.execute("""
         INSERT OR IGNORE INTO requests (
@@ -189,7 +192,7 @@ def create_request():
         ))
 
         # =========================
-        # 3️⃣ 실시간 전송 (WebSocket)
+        # 3️⃣ WebSocket 전송
         # =========================
         socketio.emit("new_request", {
             "requestID": data["requestID"],
@@ -198,6 +201,41 @@ def create_request():
             "hospital": h,
             "expire": expire.strftime("%Y-%m-%d %H:%M:%S")
         }, room=h)
+
+        # =========================
+        # 🔥 4️⃣ FCM PUSH (핵심 추가)
+        # =========================
+        cur.execute("""
+        SELECT token FROM hospital_tokens WHERE hospital=?
+        """, (h,))
+
+        token_row = cur.fetchone()
+
+        if token_row and token_row[0]:
+
+            token = token_row[0]
+
+            message = messaging.Message(
+
+                notification=messaging.Notification(
+                    title="🚨 긴급 요청",
+                    body=data.get("summary", "새 요청이 도착했습니다")
+                ),
+
+                data={
+                    "requestID": str(data["requestID"]),
+                    "hospital": h
+                },
+
+                token=token
+            )
+
+            try:
+                result = messaging.send(message)
+                print("✅ FCM sent:", result)
+
+            except Exception as e:
+                print("❌ FCM error:", e)
 
     conn.commit()
     conn.close()

@@ -295,7 +295,7 @@ def response():
     # =========================
     # 3️⃣ CLOSED 체크 (강제 종료 핵심)
     # =========================
-    if row[0] == "CLOSED":
+    if status == "CLOSED":
         conn.close()
         return "closed request"
 

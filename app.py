@@ -232,6 +232,39 @@ def response():
 
 
 # =========================
+# ⭐ 병원별 최신 요청 조회
+# =========================
+@app.route("/latest/<hospital>")
+def latest(hospital):
+
+    conn = sqlite3.connect("hospital.db")
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT requestID, summary, eta, created_at
+    FROM requests
+    WHERE hospital=?
+    AND status='OPEN'
+    ORDER BY created_at DESC
+    LIMIT 1
+    """, (hospital,))
+
+    row = cur.fetchone()
+
+    conn.close()
+
+    if not row:
+        return jsonify({})
+
+    return jsonify({
+        "requestID": row[0],
+        "summary": row[1],
+        "eta": row[2],
+        "hospital": hospital
+    })
+
+
+# =========================
 # 상황실 조회
 # =========================
 @app.route("/status/<requestID>")
@@ -244,7 +277,7 @@ def status(requestID):
     # 1️⃣ 요청 데이터 조회
     # =========================
     cur.execute("""
-    SELECT hospital, summary, eta, response, requestID
+    SELECT hospital, summary, eta, response, requestID, status
     FROM requests
     WHERE requestID=?
     """, (requestID,))
@@ -259,15 +292,11 @@ def status(requestID):
         return jsonify([])
 
     # =========================
-    # 3️⃣ CLOSED 요청은 상황실에서 제외 (중요)
+    # 3️⃣ CLOSED 요청은 상황실에서 제외
     # =========================
     result = []
 
     for r in rows:
-
-        # CLOSED 상태는 화면에서 숨김
-        if r[3] == "CLOSED":
-            continue
 
         result.append({
             "hospital": r[0],
@@ -276,8 +305,9 @@ def status(requestID):
             "response": r[3],
             "requestID": r[4]
         })
-    return jsonify(result)
 
+    return jsonify(result)
+    
 # =========================
 # ⭐ 강제 종료 API (여기 추가!)
 # =========================

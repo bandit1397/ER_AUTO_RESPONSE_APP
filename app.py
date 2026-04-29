@@ -218,17 +218,20 @@ def create_request():
             token = token_row[0]
 
             message = messaging.Message(
-
                 notification=messaging.Notification(
                     title="🚨 긴급 요청",
-                    body=data.get("summary", "새 요청이 도착했습니다")
+                    body=data.get("summary", "새 요청")
                 ),
-
                 data={
                     "requestID": str(data["requestID"]),
                     "hospital": h
                 },
-
+                android=messaging.AndroidConfig(
+                    priority="high"
+                ),
+                apns=messaging.APNSConfig(
+                    headers={"apns-priority": "10"}
+                ),
                 token=token
             )
 

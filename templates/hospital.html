@@ -97,18 +97,17 @@ const HOSPITAL = "{{ hospital }}";
 
 let current = null;
 
-const socket = io(SERVER);
-
-socket.on("connect", () => {
-  socket.emit("join", { hospital: HOSPITAL });
-});
-
 // =========================
-// 🚑 신규 요청 수신
+// ⭐ 최신 요청 불러오기
 // =========================
-socket.on("new_request", (data) => {
+async function loadLatestRequest(){
 
-  if (data.hospital !== HOSPITAL) return;
+  const res = await fetch(`/latest/${HOSPITAL}`);
+  const data = await res.json();
+
+  if(!data.requestID){
+    return;
+  }
 
   document.getElementById("card").style.display = "block";
   document.getElementById("standby").style.display = "none";
@@ -120,10 +119,35 @@ socket.on("new_request", (data) => {
   current = data.requestID;
 
   // 🔊 알람
-  const audio = new Audio("https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg");
+  const audio = new Audio(
+    "https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg"
+  );
+
   audio.play().catch(() => {});
+}
+
+
+const socket = io(SERVER);
+
+socket.on("connect", () => {
+  socket.emit("join", { hospital: HOSPITAL });
 });
 
+// =========================
+// 🚑 신규 요청 수신
+// =========================
+// =========================
+// 🚑 신규 요청 수신
+// =========================
+socket.on("new_request", async (data) => {
+
+  if (data.hospital !== HOSPITAL) return;
+
+  // ⭐ 항상 최신 요청 다시 조회
+  await loadLatestRequest();
+
+});
+  
 // =========================
 // 🚑 상황실 종료 처리 (핵심 추가 부분)
 // =========================
@@ -152,14 +176,17 @@ async function send(r) {
   await fetch(
     `${SERVER}/response?requestID=${current}&hospital=${HOSPITAL}&response=${r}`
   );
-
   alert("응답 완료: " + r);
-
   document.getElementById("card").style.display = "none";
   document.getElementById("standby").style.display = "block";
-
   current = null;
 }
+// =========================
+// ⭐ 앱 다시 활성화 시 최신 요청 복구
+// =========================
+window.addEventListener("focus", () => {
+  loadLatestRequest();
+});
 
 </script>
 

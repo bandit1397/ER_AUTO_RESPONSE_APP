@@ -100,6 +100,16 @@ def create_request():
         h = h.strip()
 
         # =========================
+        # ⭐ 이전 OPEN 요청 자동 종료
+        # =========================
+        cur.execute("""
+        UPDATE requests
+        SET status='CLOSED'
+        WHERE hospital=?
+        AND status='OPEN'
+        """, (h,))
+
+        # =========================
         # 1️⃣ 기존 응답 여부 확인
         # =========================
         cur.execute("""

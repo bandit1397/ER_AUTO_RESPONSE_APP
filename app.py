@@ -13,12 +13,22 @@ CORS(app)
 
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
+# 🔥 여기 넣는다 (핵심)
+cred = credentials.Certificate({
+    "type": os.environ["FIREBASE_TYPE"],
+    "project_id": os.environ["FIREBASE_PROJECT_ID"],
+    "private_key_id": os.environ["FIREBASE_PRIVATE_KEY_ID"],
+    "private_key": os.environ["FIREBASE_PRIVATE_KEY"].replace("\\n", "\n"),
+    "client_email": os.environ["FIREBASE_CLIENT_EMAIL"]
+})
+
+firebase_admin.initialize_app(cred)
+
 print("🔥 EMERGENCY SYSTEM STARTED")
 
 # =========================
 # DB 초기화
 # =========================
-import sqlite3
 
 def init_db():
 

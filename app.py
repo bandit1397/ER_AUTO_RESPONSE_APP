@@ -269,6 +269,10 @@ def response():
 
     row = cur.fetchone()
 
+    if not row:
+        conn.close()
+        return "not found"
+
     response = row[0]
     expires_at = row[1]
     status = row[2]

@@ -303,13 +303,6 @@ def response():
         return "closed request"
 
     # =========================
-    # 3️⃣ CLOSED 체크 (강제 종료 핵심)
-    # =========================
-    if status == "CLOSED":
-        conn.close()
-        return "closed request"
-
-    # =========================
     # 4️⃣ 이미 응답했는지
     # =========================
     if row[0]:

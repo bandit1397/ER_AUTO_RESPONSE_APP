@@ -39,6 +39,18 @@ def init_db():
     """)
 
     # =========================
+    # 병원 토큰 테이블
+    # =========================
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS hospital_tokens (
+        hospital TEXT PRIMARY KEY,
+        token TEXT
+    )
+    """)
+
+    
+
+    # =========================
     # 2️⃣ 컬럼 존재 여부 체크 (핵심 개선)
     # =========================
     cur.execute("PRAGMA table_info(requests)")

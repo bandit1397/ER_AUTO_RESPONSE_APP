@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>병원 시스템</title>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+<style>
+body {
+  margin: 0;
+  background: #0f172a;
+  color: white;
+  font-family: Arial;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+  
+#card {
+  width: 90%;
+  max-width: 400px;
+  margin: 20px auto;
+  background: #1e293b;
+  padding: 20px;
+  border-radius: 16px;
+  display: none;
+}
+
+button {
+  width: 45%;
+  padding: 18px;
+  margin: 10px 5px;
+  border: none;
+  border-radius: 12px;
+  font-size: 18px;
+}
+
+#ok { background: green; color: white; }
+#no { background: red; color: white; }
+
+#standby {
+  margin-top: 80px;
+  font-size: 22px;
+  color: yellow;
+}
+  
+/* ⭐ 여기 추가 */
+#req {
+  font-size: 22px;
+  margin: 10px 0;
+}
+
+#summary {
+  font-size: 20px;
+}
+
+#eta {
+  font-size: 18px;
+}
+
+</style>
+</head>
+
+<body>
+
+<h2>🏥 {{ hospital }}</h2>
+
+<div id="card">
+
+  <h3>🚨 EMERGENCY</h3>
+
+  <div id="req"></div>
+  <div id="summary"></div>
+  <div id="eta"></div>
+
+  <br>
+
+  <button id="ok" onclick="send('가능')">가능</button>
+  <button id="no" onclick="send('불가')">불가</button>
+
+</div>
+
+<div id="standby">대기중...</div>
+
+<script>
+
+document.body.addEventListener("click", () => {
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  ctx.resume();
+}, { once: true });
+  
+const SERVER = window.location.origin;
+const HOSPITAL = "{{ hospital }}";
+
+let current = null;
+
+const socket = io(SERVER);
+
+socket.on("connect", () => {
+  socket.emit("join", { hospital: HOSPITAL });
+});
+
+// =========================
+// 🚑 신규 요청 수신
+// =========================
+socket.on("new_request", (data) => {
+
+  if (data.hospital !== HOSPITAL) return;
+
+  document.getElementById("card").style.display = "block";
+  document.getElementById("standby").style.display = "none";
+
+  document.getElementById("req").innerText = data.requestID;
+  document.getElementById("summary").innerText = data.summary;
+  document.getElementById("eta").innerText = data.eta;
+
+  current = data.requestID;
+
+  // 🔊 알람
+  const audio = new Audio("https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg");
+  audio.play().catch(() => {});
+});
+
+// =========================
+// 🚑 상황실 종료 처리 (핵심 추가 부분)
+// =========================
+socket.on("close_request", (data) => {
+
+  console.log("CLOSE 수신:", data);
+  console.log("현재 current:", current);
+
+  if (String(current) === String(data.requestID)) {
+
+    console.log("MATCH OK → 종료 실행");
+
+    document.getElementById("card").style.display = "none";
+    document.getElementById("standby").innerText =
+      "🚑 요청 종료됨 (상황실 종료)";
+
+    current = null;
+  }
+});
+
+// =========================
+// 🚑 응답 전송 함수
+// =========================
+async function send(r) {
+
+  await fetch(
+    `${SERVER}/response?requestID=${current}&hospital=${HOSPITAL}&response=${r}`
+  );
+
+  alert("응답 완료: " + r);
+
+  document.getElementById("card").style.display = "none";
+  document.getElementById("standby").style.display = "block";
+
+  current = null;
+}
+
+</script>
+
+</body>
+</html>

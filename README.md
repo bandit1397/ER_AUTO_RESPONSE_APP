@@ -26,3 +26,8 @@
 
 # https://er-auto-response-app.onrender.com/control
 https://er-auto-response-app.onrender.com/hospital/B
+
+#android studio
+ app/manifests/androidManifest.xml
+ app/kotlin+java/com.hospital.viewer/MainActivity
+ app/res/layout/acrivity_main.xml

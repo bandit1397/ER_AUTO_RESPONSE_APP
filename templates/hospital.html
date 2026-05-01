@@ -204,9 +204,16 @@ socket.on("new_request", async (data) => {
     return;
   }
 
+  // 🔥 소리 재생
+  playAlarm();
+
+  // 📳 진동
+  if (navigator.vibrate) {
+    navigator.vibrate([500, 300, 500]);
+  }
+
   await loadLatestRequest();
 });
-
 
 // =========================
 // 🔊 알람 함수

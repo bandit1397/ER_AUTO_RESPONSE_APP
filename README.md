@@ -33,3 +33,10 @@ https://er-auto-response-app.onrender.com/hospital/B
  app/res/layout/acrivity_main.xml
 
 # UptimeRobot / get started free
+
+# 안전화
+UptimeRobot
++
+self-ping
++
+유료 Render(Always On)

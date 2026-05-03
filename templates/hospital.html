@@ -229,7 +229,7 @@ socket.on("reconnect", () => {
 // =========================
 // 🚑 신규 요청 수신
 // =========================
-socket.on("new_request", async (data) => {
+socket.on("new_request", (data) => {
 
   console.log("받음:", data);
 
@@ -237,15 +237,19 @@ socket.on("new_request", async (data) => {
     return;
   }
 
-  // 🔥 소리 재생
+  // 🔥 즉시 소리
   playAlarm();
 
-  // 📳 진동
+  // 📳 즉시 진동
   if (navigator.vibrate) {
-    navigator.vibrate([500, 300, 500]);
+    navigator.vibrate([1000, 500, 1000]);
   }
 
-  await loadLatestRequest();
+  // ⭐ 화면 로딩은 약간 뒤
+  setTimeout(() => {
+    loadLatestRequest();
+  }, 300);
+
 });
 
 // =========================

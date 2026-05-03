@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f172a">
 <title>병원 시스템</title>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
@@ -207,6 +208,21 @@ async function loadLatestRequest(){
   current = data.requestID;
 
 }
+
+// =========================
+// 🔥 앱 복귀 시 강제 최신화
+// =========================
+document.addEventListener("visibilitychange", () => {
+
+  if (!document.hidden) {
+
+    console.log("앱 복귀 → 최신 요청 복구");
+
+    loadLatestRequest();
+
+  }
+
+});
 
 
 // =========================

@@ -158,6 +158,34 @@ const HOSPITAL = "{{ hospital }}";
 let current = null;
 
 // =========================
+// 🔊 전역 알람 객체
+// =========================
+const alarmAudio = new Audio(
+  "https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg"
+);
+
+alarmAudio.preload = "auto";
+alarmAudio.volume = 1.0;
+
+// 페이지 로드시 미리 로딩
+window.addEventListener("load", () => {
+  alarmAudio.load();
+});
+
+// =========================
+// 🔊 알람 함수
+// =========================
+function playAlarm() {
+
+  // 처음부터 재생
+  alarmAudio.currentTime = 0;
+
+  alarmAudio.play().catch(err => {
+    console.log("audio blocked:", err);
+  });
+}
+  
+// =========================
 // ⭐ 최신 요청 불러오기
 // =========================
 async function loadLatestRequest(){

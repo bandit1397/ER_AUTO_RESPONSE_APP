@@ -157,6 +157,7 @@ const SERVER = window.location.origin;
 const HOSPITAL = "{{ hospital }}";
 
 let current = null;
+let respondedRequests = new Set();
 
 // =========================
 // 🔊 전역 알람 객체
@@ -196,6 +197,10 @@ async function loadLatestRequest(){
 
   if(!data.requestID){
     return;
+  }
+
+  if(respondedRequests.has(String(data.requestID))){
+  return;
   }
 
   document.getElementById("card").style.display = "block";
@@ -327,6 +332,7 @@ async function send(r) {
     `${SERVER}/response?requestID=${current}&hospital=${HOSPITAL}&response=${r}`
   );
   alert("응답 완료: " + r);
+  respondedRequests.add(String(current));
   document.getElementById("card").style.display = "none";
   document.getElementById("standby").style.display = "block";
   current = null;

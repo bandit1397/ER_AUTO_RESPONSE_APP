@@ -58,3 +58,28 @@ WakeLock
 WebView 복구
 ↓
 latest API 조회
+
+# 안전화 3
+상황실 요청
+↓
+Render DB 저장
+↓
+FCM data PUSH
+↓
+Native FirebaseMessagingService 수신
+↓
+WakeLock 획득
+↓
+Native alarm.mp3 즉시 재생
+↓
+고우선순위 Notification 생성
+↓
+사용자 터치
+↓
+MainActivity 실행
+↓
+WebView hospital/B 복구
+↓
+latest API 조회
+↓
+현재 요청 표시

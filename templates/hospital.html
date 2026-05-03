@@ -208,6 +208,20 @@ socket.on("connect", () => {
 
 });
 
+socket.on("disconnect", () => {
+  console.log("❌ socket disconnected");
+});
+
+socket.on("reconnect", () => {
+
+  console.log("🔄 socket reconnected");
+
+  socket.emit("join", { hospital: HOSPITAL });
+
+  loadLatestRequest();
+
+});
+
 
 // =========================
 // 🚑 신규 요청 수신

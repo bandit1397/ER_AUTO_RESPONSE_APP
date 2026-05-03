@@ -198,13 +198,16 @@ const socket = io(SERVER, {
 
 });
 
-socket.on("connect", () => {
+socket.on("connect", async () => {
 
-  console.log("✅ socket connected");
+  console.log("socket connected");
 
-  setTimeout(() => {
-    socket.emit("join", { hospital: HOSPITAL });
-  }, 300);
+  socket.emit("join", {
+    hospital: HOSPITAL
+  });
+
+  // reconnect 후 최신 요청 복구
+  await loadLatestRequest();
 
 });
 

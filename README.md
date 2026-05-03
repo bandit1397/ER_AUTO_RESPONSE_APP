@@ -40,3 +40,21 @@ UptimeRobot
 self-ping
 +
 유료 Render(Always On)
+# 안정화 2
+상황실 요청
+↓
+Render
+↓
+FCM PUSH
+↓
+Android Native FirebaseMessagingService
+↓
+강제 알림음
+↓
+WakeLock
+↓
+앱 화면 깨움
+↓
+WebView 복구
+↓
+latest API 조회

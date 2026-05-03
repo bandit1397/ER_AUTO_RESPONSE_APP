@@ -184,12 +184,28 @@ async function loadLatestRequest(){
 // =========================
 // Socket 연결
 // =========================
-const socket = io(SERVER);
+const socket = io(SERVER, {
+
+  reconnection: true,
+  reconnectionAttempts: Infinity,
+
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+
+  timeout: 20000,
+
+  transports: ["websocket", "polling"]
+
+});
 
 socket.on("connect", () => {
+
+  console.log("✅ socket connected");
+
   setTimeout(() => {
     socket.emit("join", { hospital: HOSPITAL });
   }, 300);
+
 });
 
 

@@ -1,21 +1,32 @@
+import eventlet
+eventlet.monkey_patch()
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit, join_room
 import sqlite3
 from datetime import datetime, timedelta
 import os
+import json
+
+import firebase_admin
+from firebase_admin import credentials, messaging
 
 app = Flask(__name__)
 CORS(app)
 
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
+
+cred_json = json.loads(os.environ["FIREBASE_CREDENTIALS"])
+
+cred = credentials.Certificate(cred_json)
+
+firebase_admin.initialize_app(cred)
 
 print("🔥 EMERGENCY SYSTEM STARTED")
 
 # =========================
 # DB 초기화
 # =========================
-import sqlite3
 
 def init_db():
 
@@ -37,6 +48,18 @@ def init_db():
         UNIQUE(requestID, hospital)
     )
     """)
+
+    # =========================
+    # 병원 토큰 테이블
+    # =========================
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS hospital_tokens (
+        hospital TEXT PRIMARY KEY,
+        token TEXT
+    )
+    """)
+
+    
 
     # =========================
     # 2️⃣ 컬럼 존재 여부 체크 (핵심 개선)
@@ -81,15 +104,56 @@ def join(data):
     print("joined:", hospital)
 
 # =========================
+# FCM 토큰 저장
+# =========================
+@app.route("/save_token", methods=["POST"])
+def save_token():
+
+    data = request.json
+
+    hospital = data.get("hospital")
+    token = data.get("token")
+
+    conn = sqlite3.connect("hospital.db")
+    cur = conn.cursor()
+
+    cur.execute("""
+    INSERT OR REPLACE INTO hospital_tokens (
+        hospital,
+        token
+    )
+    VALUES (?, ?)
+    """, (hospital, token))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"status":"saved"})
+
+@app.route("/debug/tokens")
+def debug_tokens():
+    conn = sqlite3.connect("hospital.db")
+    cur = conn.cursor()
+
+    cur.execute("SELECT * FROM hospital_tokens")
+    rows = cur.fetchall()
+
+    conn.close()
+
+    return jsonify(rows)
+    
+# =========================
 # 요청 생성 (실시간 push)
 # =========================
+from firebase_admin import messaging
+
 @app.route("/request", methods=["POST"])
 def create_request():
 
     data = request.json
     now = datetime.now()
 
-    # ⏰ 30분 유효시간 (추천 실전값)
+    # ⏰ 30분 유효시간
     expire = now + timedelta(minutes=30)
 
     conn = sqlite3.connect("hospital.db")
@@ -98,6 +162,16 @@ def create_request():
     for h in data["hospitals"]:
 
         h = h.strip()
+
+        # =========================
+        # ⭐ 이전 OPEN 요청 자동 종료
+        # =========================
+        cur.execute("""
+        UPDATE requests
+        SET status='CLOSED'
+        WHERE hospital=?
+        AND status='OPEN'
+        """, (h,))
 
         # =========================
         # 1️⃣ 기존 응답 여부 확인
@@ -115,7 +189,7 @@ def create_request():
             continue
 
         # =========================
-        # 2️⃣ 데이터 저장 (없으면 생성)
+        # 2️⃣ 데이터 저장
         # =========================
         cur.execute("""
         INSERT OR IGNORE INTO requests (
@@ -139,7 +213,7 @@ def create_request():
         ))
 
         # =========================
-        # 3️⃣ 실시간 전송 (WebSocket)
+        # 3️⃣ WebSocket 전송
         # =========================
         socketio.emit("new_request", {
             "requestID": data["requestID"],
@@ -148,6 +222,49 @@ def create_request():
             "hospital": h,
             "expire": expire.strftime("%Y-%m-%d %H:%M:%S")
         }, room=h)
+
+        # =========================
+        # 🔥 4️⃣ FCM PUSH (핵심 추가)
+        # =========================
+        cur.execute("""
+        SELECT token FROM hospital_tokens WHERE hospital=?
+        """, (h,))
+
+        token_row = cur.fetchone()
+
+        if token_row and token_row[0]:
+
+            token = token_row[0]
+
+            message = messaging.Message(
+
+                data={
+                    "title": "🚨 긴급 요청",
+                    "body": data.get("summary", "새 요청"),
+                    "requestID": str(data["requestID"]),
+                    "hospital": h,
+                    "type": "emergency"
+                },
+
+                android=messaging.AndroidConfig(
+                    priority="high"
+                ),
+
+                apns=messaging.APNSConfig(
+                    headers={
+                        "apns-priority": "10"
+                    }
+                ),
+
+                token=token
+            )
+
+            try:
+                result = messaging.send(message)
+                print("✅ FCM sent:", result)
+
+            except Exception as e:
+                print("❌ FCM error:", e)
 
     conn.commit()
     conn.close()
@@ -179,26 +296,16 @@ def response():
 
     row = cur.fetchone()
 
+    if not row:
+        conn.close()
+        return "not found"
+
     response = row[0]
     expires_at = row[1]
     status = row[2]
 
     # 🚨 여기서 바로 체크
     if status == "CLOSED":
-        conn.close()
-        return "closed request"
-
-    # =========================
-    # 2️⃣ 존재 여부
-    # =========================
-    if not row:
-        conn.close()
-        return "not found"
-
-    # =========================
-    # 3️⃣ CLOSED 체크 (강제 종료 핵심)
-    # =========================
-    if row[0] == "CLOSED":
         conn.close()
         return "closed request"
 
@@ -232,6 +339,39 @@ def response():
 
 
 # =========================
+# ⭐ 병원별 최신 요청 조회
+# =========================
+@app.route("/latest/<hospital>")
+def latest(hospital):
+
+    conn = sqlite3.connect("hospital.db")
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT requestID, summary, eta, created_at
+    FROM requests
+    WHERE hospital=?
+    AND status='OPEN'
+    ORDER BY created_at DESC
+    LIMIT 1
+    """, (hospital,))
+
+    row = cur.fetchone()
+
+    conn.close()
+
+    if not row:
+        return jsonify({})
+
+    return jsonify({
+        "requestID": row[0],
+        "summary": row[1],
+        "eta": row[2],
+        "hospital": hospital
+    })
+
+
+# =========================
 # 상황실 조회
 # =========================
 @app.route("/status/<requestID>")
@@ -244,7 +384,7 @@ def status(requestID):
     # 1️⃣ 요청 데이터 조회
     # =========================
     cur.execute("""
-    SELECT hospital, summary, eta, response, requestID
+    SELECT hospital, summary, eta, response, requestID, status
     FROM requests
     WHERE requestID=?
     """, (requestID,))
@@ -259,15 +399,11 @@ def status(requestID):
         return jsonify([])
 
     # =========================
-    # 3️⃣ CLOSED 요청은 상황실에서 제외 (중요)
+    # 3️⃣ CLOSED 요청은 상황실에서 제외
     # =========================
     result = []
 
     for r in rows:
-
-        # CLOSED 상태는 화면에서 숨김
-        if r[3] == "CLOSED":
-            continue
 
         result.append({
             "hospital": r[0],
@@ -276,8 +412,9 @@ def status(requestID):
             "response": r[3],
             "requestID": r[4]
         })
-    return jsonify(result)
 
+    return jsonify(result)
+    
 # =========================
 # ⭐ 강제 종료 API (여기 추가!)
 # =========================
@@ -331,4 +468,4 @@ if __name__ == "__main__":
 
     port = int(os.environ.get("PORT", 5000))
 
-    socketio.run(app, host="0.0.0.0", port=port)
+    socketio.run(app, host="0.0.0.0", port=port, allow_unsafe_werkzeug=True)

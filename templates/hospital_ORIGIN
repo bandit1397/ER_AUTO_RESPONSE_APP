@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f172a">
+<title>병원 시스템</title>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDsJCi2FmnNxjze95RK9eqGcTWv8zdYNxQ",
+  authDomain: "er-auto-response.firebaseapp.com",
+  projectId: "er-auto-response",
+  storageBucket: "er-auto-response.firebasestorage.app",
+  messagingSenderId: "604456714636",
+  appId: "1:604456714636:web:8d0e832013b5e2c60256a9"
+};
+
+const app = initializeApp(firebaseConfig);
+
+const messaging = getMessaging(app);
+
+navigator.serviceWorker.register("/firebase-messaging-sw.js");
+
+Notification.requestPermission().then(async (permission) => {
+
+  if(permission === "granted") {
+
+    console.log("알림 허용 완료");
+
+    const token = await getToken(messaging, {
+
+      vapidKey: "BMF4NpqP1JlSpLYIds8iartFBmAU2kU0OYlQLDB41cL76baFrIR8XOY2N04tJxEPvh_1DJJmw57neo8utR8Qi-w"
+
+    });
+
+    // =========================
+    // 서버에 토큰 저장
+    // =========================
+    await fetch("/save_token", {
+
+      method: "POST",
+
+      headers: {
+        "Content-Type":"application/json"
+      },
+
+      body: JSON.stringify({
+        hospital: "{{ hospital }}",
+        token: token
+      })
+
+    });
+
+    console.log("토큰 저장 완료");
+
+  }
+
+});
+  
+</script>
+
+<style>
+  
+body {
+  margin: 0;
+  background: #0f172a;
+  color: white;
+  font-family: Arial;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+  
+#card {
+  width: 90%;
+  max-width: 400px;
+  margin: 20px auto;
+  background: #1e293b;
+  padding: 20px;
+  border-radius: 16px;
+  display: none;
+}
+
+button {
+  width: 45%;
+  padding: 18px;
+  margin: 10px 5px;
+  border: none;
+  border-radius: 12px;
+  font-size: 18px;
+}
+
+#ok { background: green; color: white; }
+#no { background: red; color: white; }
+
+#standby {
+  margin-top: 80px;
+  font-size: 22px;
+  color: yellow;
+}
+  
+/* ⭐ 여기 추가 */
+#req {
+  font-size: 22px;
+  margin: 10px 0;
+}
+
+#summary {
+  font-size: 20px;
+}
+
+#eta {
+  font-size: 18px;
+}
+
+</style>
+</head>
+
+<body>
+
+<h2>🏥 {{ hospital }}</h2>
+
+<div id="card">
+
+  <h3>🚨 EMERGENCY</h3>
+
+  <div id="req"></div>
+  <div id="summary"></div>
+  <div id="eta"></div>
+
+  <br>
+
+  <button id="ok" onclick="send('가능')">가능</button>
+  <button id="no" onclick="send('불가')">불가</button>
+
+</div>
+
+<div id="standby">대기중...</div>
+
+<script>
+
+document.body.addEventListener("click", () => {
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  ctx.resume();
+}, { once: true });
+  
+const SERVER = window.location.origin;
+const HOSPITAL = "{{ hospital }}";
+
+let current = null;
+let respondedRequests = new Set();
+
+// =========================
+// 🔊 전역 알람 객체
+// =========================
+const alarmAudio = new Audio(
+  "https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg"
+);
+
+alarmAudio.preload = "auto";
+alarmAudio.volume = 1.0;
+
+// 페이지 로드시 미리 로딩
+window.addEventListener("load", () => {
+  alarmAudio.load();
+});
+
+// =========================
+// 🔊 알람 함수
+// =========================
+function playAlarm() {
+
+  // 처음부터 재생
+  alarmAudio.currentTime = 0;
+
+  alarmAudio.play().catch(err => {
+    console.log("audio blocked:", err);
+  });
+}
+  
+// =========================
+// ⭐ 최신 요청 불러오기
+// =========================
+async function loadLatestRequest(){
+
+  const res = await fetch(`/latest/${HOSPITAL}`);
+  const data = await res.json();
+
+  if(!data.requestID){
+    return;
+  }
+
+  if(respondedRequests.has(String(data.requestID))){
+  return;
+  }
+
+  document.getElementById("card").style.display = "block";
+  document.getElementById("standby").style.display = "none";
+
+  document.getElementById("req").innerText = data.requestID;
+  document.getElementById("summary").innerText = data.summary;
+  document.getElementById("eta").innerText = data.eta;
+
+  current = data.requestID;
+
+}
+
+// =========================
+// 🔥 앱 복귀 시 강제 최신화
+// =========================
+document.addEventListener("visibilitychange", () => {
+
+  if (!document.hidden) {
+
+    console.log("앱 복귀 → 최신 요청 복구");
+
+    loadLatestRequest();
+
+  }
+
+});
+
+
+// =========================
+// Socket 연결
+// =========================
+const socket = io(SERVER, {
+
+  reconnection: true,
+  reconnectionAttempts: Infinity,
+
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+
+  timeout: 20000,
+
+  transports: ["websocket", "polling"]
+
+});
+
+socket.on("connect", async () => {
+
+  console.log("socket connected");
+
+  socket.emit("join", {
+    hospital: HOSPITAL
+  });
+
+  // reconnect 후 최신 요청 복구
+  await loadLatestRequest();
+
+});
+
+socket.on("disconnect", () => {
+  console.log("❌ socket disconnected");
+});
+
+socket.on("reconnect", () => {
+
+  console.log("🔄 socket reconnected");
+
+  socket.emit("join", { hospital: HOSPITAL });
+
+  loadLatestRequest();
+
+});
+
+
+// =========================
+// 🚑 신규 요청 수신
+// =========================
+socket.on("new_request", (data) => {
+
+  console.log("받음:", data);
+
+  if (!data.hospital || data.hospital.trim() !== HOSPITAL.trim()) {
+    return;
+  }
+
+  // 🔥 즉시 소리
+  playAlarm();
+
+  // 📳 즉시 진동
+  if (navigator.vibrate) {
+    navigator.vibrate([1000, 500, 1000]);
+  }
+
+  // ⭐ 화면 로딩은 약간 뒤
+  setTimeout(() => {
+    loadLatestRequest();
+  }, 300);
+
+});
+
+
+  
+// =========================
+// 🚑 상황실 종료 처리 (핵심 추가 부분)
+// =========================
+socket.on("close_request", (data) => {
+
+  console.log("CLOSE 수신:", data);
+  console.log("현재 current:", current);
+
+  if (String(current) === String(data.requestID)) {
+
+    console.log("MATCH OK → 종료 실행");
+
+    document.getElementById("card").style.display = "none";
+    document.getElementById("standby").innerText =
+      "🚑 요청 종료됨 (상황실 종료)";
+
+    current = null;
+  }
+});
+
+// =========================
+// 🚑 응답 전송 함수
+// =========================
+async function send(r) {
+
+  await fetch(
+    `${SERVER}/response?requestID=${current}&hospital=${HOSPITAL}&response=${r}`
+  );
+  alert("응답 완료: " + r);
+  respondedRequests.add(String(current));
+  document.getElementById("card").style.display = "none";
+  document.getElementById("standby").style.display = "block";
+  current = null;
+}
+// =========================
+// ⭐ 앱 다시 활성화 시 최신 요청 복구
+// =========================
+window.addEventListener("focus", () => {
+  loadLatestRequest();
+});
+
+setInterval(loadLatestRequest, 3000);
+
+</script>
+
+</body>
+</html>

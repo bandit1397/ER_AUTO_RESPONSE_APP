@@ -262,11 +262,14 @@ def create_request():
             )
 
             try:
+                print("🔥 TRY FCM")
+
                 result = messaging.send(message)
+
                 print("✅ FCM sent:", result)
 
             except Exception as e:
-                print("❌ FCM error:", e)
+                print("❌ FCM error:", str(e))
 
     conn.commit()
     conn.close()

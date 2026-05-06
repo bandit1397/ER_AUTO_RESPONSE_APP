@@ -1,5 +1,5 @@
 package com.hospital.viewer;
-
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -16,6 +16,9 @@ public class MainActivity extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
 
+        // =========================
+        // WebView
+        // =========================
         webView = new WebView(this);
 
         setContentView(webView);
@@ -33,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
 
         // ⭐ 최신 hospital 페이지 복구
         webView.loadUrl(
-            "https://er-auto-response-app.onrender.com/hospital/B"
+                "https://er-auto-response-app.onrender.com/hospital/B"
         );
     }
 

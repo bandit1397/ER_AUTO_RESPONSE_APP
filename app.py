@@ -12,7 +12,11 @@ from firebase_admin import credentials, messaging
 app = Flask(__name__)
 CORS(app)
 
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    async_mode="gevent"
+)
 
 cred_json = json.loads(os.environ["FIREBASE_CREDENTIALS"])
 

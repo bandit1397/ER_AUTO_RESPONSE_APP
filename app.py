@@ -44,6 +44,22 @@ def send_fcm(token):
 
     return response
 
+@app.route("/send", methods=["POST"])
+def send():
+
+    data = request.json
+    token = data.get("token")
+
+    if not token:
+        return jsonify({"error": "no token"}), 400
+
+    result = send_fcm(token)
+
+    return jsonify({
+        "status": "ok",
+        "result": str(result)
+    })
+
 # =========================
 # DB 초기화
 # =========================

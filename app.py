@@ -52,18 +52,17 @@ def send_fcm(token, title="긴급 요청", body="상황실 요청 도착"):
 
     message = messaging.Message(
 
-        # ⭐ 핵심: data message
+        token=token,
+
         data={
             "title": title,
             "body": body
         },
 
-        # ⭐ 핵심: high priority
         android=messaging.AndroidConfig(
-            priority="high"
+            priority="high",
+            ttl=0   # ⭐ 핵심: 즉시 전달
         ),
-
-        token=token
     )
 
     response = messaging.send(message)

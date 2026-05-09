@@ -1,3 +1,5 @@
+import eventlet
+eventlet.monkey_patch()
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit, join_room
@@ -12,11 +14,7 @@ from firebase_admin import credentials, messaging
 app = Flask(__name__)
 CORS(app)
 
-socketio = SocketIO(
-    app,
-    cors_allowed_origins="*",
-    async_mode="gevent"
-)
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
 cred_json = json.loads(os.environ["FIREBASE_CREDENTIALS"])
 
@@ -262,14 +260,11 @@ def create_request():
             )
 
             try:
-                print("🔥 TRY FCM")
-
                 result = messaging.send(message)
-
                 print("✅ FCM sent:", result)
 
             except Exception as e:
-                print("❌ FCM error:", str(e))
+                print("❌ FCM error:", e)
 
     conn.commit()
     conn.close()

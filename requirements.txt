@@ -4,5 +4,3 @@ flask-socketio
 eventlet
 gunicorn
 firebase-admin
-gevent
-gevent-websocket

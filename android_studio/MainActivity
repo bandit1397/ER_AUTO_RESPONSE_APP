@@ -1,11 +1,14 @@
 package com.hospital.viewer;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.firebase.messaging.FirebaseMessaging;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -16,6 +19,27 @@ public class MainActivity extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
 
+        // =========================
+        // FCM TOKEN 확인
+        // =========================
+        FirebaseMessaging.getInstance().getToken()
+                .addOnCompleteListener(task -> {
+
+                    if (!task.isSuccessful()) {
+
+                        Log.e("FCM_TOKEN", "TOKEN FAILED");
+
+                        return;
+                    }
+
+                    String token = task.getResult();
+
+                    Log.d("FCM_TOKEN", token);
+                });
+
+        // =========================
+        // WebView
+        // =========================
         webView = new WebView(this);
 
         setContentView(webView);
@@ -31,9 +55,8 @@ public class MainActivity extends AppCompatActivity {
 
         webView.setWebViewClient(new WebViewClient());
 
-        // ⭐ 최신 hospital 페이지 복구
         webView.loadUrl(
-            "https://er-auto-response-app.onrender.com/hospital/B"
+                "https://er-auto-response-app.onrender.com/hospital/B"
         );
     }
 

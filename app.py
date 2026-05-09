@@ -26,7 +26,25 @@ firebase_admin.initialize_app(cred)
 
 print("🔥 EMERGENCY SYSTEM STARTED")
 
+def send_fcm(token, title="긴급 요청", body="상황실 요청 도착"):
 
+    message = messaging.Message(
+        token=token,
+
+        android=messaging.AndroidConfig(
+            priority="high"
+        ),
+
+        data={
+            "title": title,
+            "body": body
+        }
+    )
+
+    response = messaging.send(message)
+    print("FCM SENT:", response)
+
+    return response
 # =========================
 # FCM 전송 함수 (핵심 정리)
 # =========================

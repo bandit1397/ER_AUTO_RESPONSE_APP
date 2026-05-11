@@ -85,11 +85,14 @@ latest API 조회
 현재 요청 표시
 
 # [병원 서버]
-   ↓ (FCM high priority)
-[Android FCM Receiver]
+FCM (High Priority)
    ↓
-[ForegroundService]
+FirebaseMessagingService
    ↓
-[AlarmController]
+ForegroundService (핵심)
    ↓
-🔊 즉시 소리 + 진동 + 화면 wake/
+WakeLock (보조)
+   ↓
+AlarmController
+   ↓
+🔊 MediaPlayer

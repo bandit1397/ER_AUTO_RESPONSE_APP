@@ -96,3 +96,8 @@ WakeLock (보조)
 AlarmController
    ↓
 🔊 MediaPlayer
+
+# C:\Users\owner>curl -X POST https://er-auto-response-app.onrender.com/send ^
+More? -H "Content-Type: application/json" ^
+More? -d "{\"token\":\"dsvcERv6T0Csw5mbvcFo0_:APA91bEieijkeXeihHjEV2eibU5_ocoqCbPu2U8pmH9YQcWHHc3vBUcRophd7JQcBMMCrqmZlQwYa2rKTuCWpOF500c0-KtK5sDL6wwIezWHDiMikeMiKDQ\",\"title\":\"TEST\",\"body\":\"HELLO\"}"
+{"result":"projects/er-auto-response/messages/0:1778507660033963%ac4381d9f9fd7ecd","status":"ok"}

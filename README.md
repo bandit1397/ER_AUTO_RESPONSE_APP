@@ -83,3 +83,13 @@ WebView hospital/B 복구
 latest API 조회
 ↓
 현재 요청 표시
+
+# [병원 서버]
+   ↓ (FCM high priority)
+[Android FCM Receiver]
+   ↓
+[ForegroundService]
+   ↓
+[AlarmController]
+   ↓
+🔊 즉시 소리 + 진동 + 화면 wake/
